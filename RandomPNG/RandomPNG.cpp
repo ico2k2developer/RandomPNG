@@ -52,9 +52,9 @@ int main(int argc,char** argv)
 					{
 						size_t width = strtol(argv[ARG_WIDTH], NULL, 10);
 						size_t height = strtol(argv[ARG_HEIGHT], NULL, 10);
-						printf("Generating %s, width: %d height: %d",argv[ARG_FILENAME],width,height);
+						printf("Generating %s, width: %d height: %d",argv[ARG_FILENAME],(int)width,(int)height);
 						png_init_io(png_ptr, fp);
-						png_set_IHDR(png_ptr, info_ptr, width, height, BIT_DEPTH, COLOR_TYPE, INTERLACE_TYPE, COMPRESSION_TYPE, FILTER_TYPE);
+						png_set_IHDR(png_ptr, info_ptr,(png_uint_32) width,(png_uint_32) height, BIT_DEPTH, COLOR_TYPE, INTERLACE_TYPE, COMPRESSION_TYPE, FILTER_TYPE);
 						png_write_info(png_ptr, info_ptr);
 						png_set_swap(png_ptr);
 						size_t size = width * BIT_DEPTH * COLOR_CHANNELS / 8;
@@ -65,10 +65,10 @@ int main(int argc,char** argv)
 						uniform_int_distribution<unsigned int> distribution(0,UCHAR_MAX);
 						for (i1 = 0; i1 < height; i1++)
 						{
-							printf("\n\nWriting row %d, %d%% of the image done", i1 + 1,i1 * 100 / height);
+							printf("\n\nWriting row %d, %d%% of the image done", (int)(i1 + 1), (int)(i1 * 100 / height));
 							for (i2 = 0; i2 < size; i2++)
 							{
-								row[i2] = (unsigned char)(gen() % (UCHAR_MAX + 1));
+								row[i2] = (png_byte)(gen() % (UCHAR_MAX + 1));
 							}
 							png_write_row(png_ptr, row);
 							mt19937_64 gen(device());
