@@ -15,13 +15,8 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="RandomPNG.cpp">
+    <ClCompile Include="PNGtoText.cpp">
       <Filter>File di origine</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
-    <None Include="xmpir64.dll" />
-    <None Include="xmpir32.dll" />
   </ItemGroup>
 </Project>
