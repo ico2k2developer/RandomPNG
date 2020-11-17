@@ -25,16 +25,19 @@ public:
 protected:
 	HICON m_hIcon;
 	CEdit *path,*width,*height,*text;
-	CButton *transparency,*bit8,*bit16,*autogen,*textgen,*generate,*choosefile;
+	CButton *transparency,*bit8,*bit16,*autogen,*textgen,*generate,*choosefile,*wordfirst,*wordlast,*endiandef,*endianbig,*endianlittle,*autoopen;
 	CProgressCtrl* progress;
 
 	void OnGenerateImageClick();
 	void OnChooseFileClick();
 	void OnTransparencyClick();
-	void On8BitClick();
-	void On16BitClick();
-	void OnAutoGenClick();
-	void OnTextGenClick();
+	void OnBitClick();
+	void OnGenClick();
+	void OnWordClick();
+	void OnEndianDefClick();
+	void OnEndianBigClick();
+	void OnEndianLittleClick();
+	void OnAutoOpenClick();
 
 
 	// Funzioni generate per la mappa dei messaggi

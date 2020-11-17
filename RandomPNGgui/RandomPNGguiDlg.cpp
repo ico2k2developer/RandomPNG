@@ -38,10 +38,15 @@ BEGIN_MESSAGE_MAP(CRandomPNGguiDlg, CDialogEx)
 	ON_BN_CLICKED(ID_GENERATE, OnGenerateImageClick)
 	ON_BN_CLICKED(ID_CHOOSEFILE, OnChooseFileClick)
 	ON_BN_CLICKED(ID_TRANSPARENCY, OnTransparencyClick)
-	ON_BN_CLICKED(ID_8BIT, On8BitClick)
-	ON_BN_CLICKED(ID_16BIT, On16BitClick)
-	ON_BN_CLICKED(ID_AUTOGEN, OnAutoGenClick)
-	ON_BN_CLICKED(ID_TEXTGEN, OnTextGenClick)
+	ON_BN_CLICKED(ID_8BIT, OnBitClick)
+	ON_BN_CLICKED(ID_16BIT, OnBitClick)
+	ON_BN_CLICKED(ID_AUTOGEN, OnGenClick)
+	ON_BN_CLICKED(ID_TEXTGEN, OnGenClick)
+	ON_BN_CLICKED(ID_WORDFIRST, OnWordClick)
+	ON_BN_CLICKED(ID_WORDLAST, OnWordClick)
+	ON_BN_CLICKED(ID_ENDIANDEF, OnEndianDefClick)
+	ON_BN_CLICKED(ID_ENDIANBIG, OnEndianBigClick)
+	ON_BN_CLICKED(ID_ENDIANLITTLE, OnEndianLittleClick)
 	//ON_CBN_SELCHANGE(IDC_COMBOBOXEX1, &CRandomPNGguiDlg::OnCbnSelchangeComboboxex1)
 END_MESSAGE_MAP()
 
@@ -90,6 +95,12 @@ BOOL CRandomPNGguiDlg::OnInitDialog()
 	bit16 = (CButton*)GetDlgItem(ID_16BIT);
 	autogen = (CButton*)GetDlgItem(ID_AUTOGEN);
 	textgen = (CButton*)GetDlgItem(ID_TEXTGEN);
+	wordfirst = (CButton*)GetDlgItem(ID_WORDFIRST);
+	wordlast = (CButton*)GetDlgItem(ID_WORDLAST);
+	endiandef = (CButton*)GetDlgItem(ID_ENDIANDEF);
+	endianbig = (CButton*)GetDlgItem(ID_ENDIANBIG);
+	endianlittle = (CButton*)GetDlgItem(ID_ENDIANLITTLE);
+	autoopen = (CButton*)GetDlgItem(ID_AUTOOPEN);
 	progress = (CProgressCtrl*)GetDlgItem(ID_PROGRESS);
 	path->SetWindowTextW(_T(DEF_FILENAME));
 	width->SetWindowTextW(_T(DEF_WIDTH));
@@ -97,6 +108,8 @@ BOOL CRandomPNGguiDlg::OnInitDialog()
 	bit8->SetCheck(BST_CHECKED);
 	autogen->SetCheck(BST_CHECKED);
 	text->EnableWindow(FALSE);
+	wordfirst->SetCheck(BST_CHECKED);
+	endiandef->SetCheck(BST_CHECKED);
 	return TRUE;  // restituisce TRUE a meno che non venga impostato lo stato attivo su un controllo.
 }
 
@@ -206,27 +219,42 @@ void CRandomPNGguiDlg::OnGenerateImageClick()
 					gmp_randseed_ui(rand, static_cast<long unsigned int>(std::chrono::high_resolution_clock::now().time_since_epoch().count()));
 					mpz_urandomm(item, rand, allImages);
 				}
-
-
-				/*FILE* info;
-				char* name = new char[strlen(argv[ARG_FILENAME]) + strlen(INFO_EXT) + 1];
-				strcpy(name, argv[ARG_FILENAME]);
-				fopen_s(&info, strcat(name, INFO_EXT), "wb");
-				if (info)
-				{
-					fprintf(info, "Here it is the value %s has been made from (base %d):\n", argv[ARG_FILENAME], BASE_VALUE);
-					mpz_out_str(info, BASE_VALUE, item);
-					fprintf(info, "\n\nHere it is the total amount of possible images, given the resolution is %dx%d, the bit depth is %d and the colours channels count is %d:\n",width,height,BIT_DEPTH,COLOR_CHANNELS);
-					mpz_out_str(info, 10, allImages);
-					fprintf(info, "\n\nGood work!");
-					fclose(info);
-				}
-				delete[] name;*/
 				mpz_clear(allImages);
 				size_t size = pixelBits / 8 * width;
 				png_byte* pixels = new png_byte[size * height];
 				png_byte* row = new png_byte[size];
-				mpz_export(pixels, NULL, 1, bit / 8, 0, 0, item);
+				int endianess = 0;
+				if (endianbig->GetCheck())
+					endianess = 1;
+				else if (endianlittle->GetCheck())
+					endianess = -1;
+				mpz_export(pixels, NULL, wordfirst->GetCheck() ? 1 : -1, bit / 8, endianess, 0, item);
+
+				/*
+				void * mpz_export (void *rop, size_t *countp, int order, size_t size, int endian, size_t nails, const mpz_t op)
+				Fill rop with word data from op.
+
+				The parameters specify the format of the data produced. Each word will be size bytes and order can be 1 for most significant word first or -1
+				for least significant first. Within each word endian can be 1 for most significant byte first, -1 for least significant first, or 0 for the
+				native endianness of the host CPU. The most significant nails bits of each word are unused and set to zero, this can be 0 to produce full words.
+
+				The number of words produced is written to *countp, or countp can be NULL to discard the count. rop must have enough space for the data, or if
+				rop is NULL then a result array of the necessary size is allocated using the current GMP allocation function (see Custom Allocation). In either
+				case the return value is the destination used, either rop or the allocated block.
+
+				If op is non-zero then the most significant word produced will be non-zero. If op is zero then the count returned will be zero and nothing
+				written to rop. If rop is NULL in this case, no block is allocated, just NULL is returned.
+
+				The sign of op is ignored, just the absolute value is exported. An application can use mpz_sgn to get the sign and handle it as desired.
+
+				There are no data alignment restrictions on rop, any address is allowed.
+
+				When an application is allocating space itself the required size can be determined with a calculation like the following. Since mpz_sizeinbase
+				always returns at least 1, count here will be at least one, which avoids any portability problems with malloc(0), though if z is zero no space
+				at all is actually needed (or written).
+
+				*/
+
 				mpz_clear(item);
 
 				size_t i1, i2;
@@ -252,14 +280,18 @@ void CRandomPNGguiDlg::OnGenerateImageClick()
 			png_destroy_write_struct(&png_ptr, &info_ptr);
 			fclose(fp);
 			//system(file);
-			ShellExecute(
-				GetSafeHwnd(),
-				_T("open"),
-				file,
-				NULL,
-				NULL,
-				SW_SHOWNORMAL
-			);
+			if (autoopen->GetCheck())
+			{
+				ShellExecute(
+					GetSafeHwnd(),
+					_T("open"),
+					file,
+					NULL,
+					NULL,
+					SW_SHOWNORMAL
+				);
+
+			}
 		}
 		else
 		{
@@ -305,7 +337,7 @@ void CRandomPNGguiDlg::OnTransparencyClick()
 	//transparency->SetCheck(transparency->GetCheck() ? BST_UNCHECKED : BST_CHECKED);
 }
 
-void CRandomPNGguiDlg::On8BitClick()
+void CRandomPNGguiDlg::OnBitClick()
 {
 	if (bit8->GetCheck() == BST_CHECKED)
 	{
@@ -319,21 +351,7 @@ void CRandomPNGguiDlg::On8BitClick()
 	}
 }
 
-void CRandomPNGguiDlg::On16BitClick()
-{
-	if (bit16->GetCheck() == BST_CHECKED)
-	{
-		bit16->SetCheck(BST_UNCHECKED);
-		bit8->SetCheck(BST_CHECKED);
-	}
-	else
-	{
-		bit8->SetCheck(BST_UNCHECKED);
-		bit16->SetCheck(BST_CHECKED);
-	}
-}
-
-void CRandomPNGguiDlg::OnAutoGenClick()
+void CRandomPNGguiDlg::OnGenClick()
 {
 	if (autogen->GetCheck() == BST_CHECKED)
 	{
@@ -349,18 +367,61 @@ void CRandomPNGguiDlg::OnAutoGenClick()
 	}
 }
 
-void CRandomPNGguiDlg::OnTextGenClick()
+void CRandomPNGguiDlg::OnWordClick()
 {
-	if (textgen->GetCheck() == BST_CHECKED)
+	if (wordfirst->GetCheck() == BST_CHECKED)
 	{
-		textgen->SetCheck(BST_UNCHECKED);
-		autogen->SetCheck(BST_CHECKED);
-		text->EnableWindow(FALSE);
+		wordfirst->SetCheck(BST_UNCHECKED);
+		wordlast->SetCheck(BST_CHECKED);
 	}
 	else
 	{
-		autogen->SetCheck(BST_UNCHECKED);
-		textgen->SetCheck(BST_CHECKED);
-		text->EnableWindow(TRUE);
+		wordlast->SetCheck(BST_UNCHECKED);
+		wordfirst->SetCheck(BST_CHECKED);
+	}
+}
+
+void CRandomPNGguiDlg::OnEndianDefClick()
+{
+	if (endiandef->GetCheck() == BST_CHECKED)
+	{
+		endiandef->SetCheck(BST_UNCHECKED);
+		endianbig->SetCheck(BST_CHECKED);
+	}
+	else
+	{
+		endiandef->SetCheck(BST_CHECKED);
+		endianbig->SetCheck(BST_UNCHECKED);
+		endianlittle->SetCheck(BST_UNCHECKED);
+	}
+}
+
+void CRandomPNGguiDlg::OnEndianBigClick()
+{
+	if (endianbig->GetCheck() == BST_CHECKED)
+	{
+		endianbig->SetCheck(BST_UNCHECKED);
+		endianlittle->SetCheck(BST_CHECKED);
+	}
+	else
+	{
+		endianbig->SetCheck(BST_CHECKED);
+		endiandef->SetCheck(BST_UNCHECKED);
+		endianlittle->SetCheck(BST_UNCHECKED);
+	}
+}
+
+void CRandomPNGguiDlg::OnEndianLittleClick()
+{
+	if (endianlittle->GetCheck() == BST_CHECKED)
+	{
+		endianlittle->SetCheck(BST_UNCHECKED);
+		endiandef->SetCheck(BST_CHECKED);
+	}
+	else
+	{
+		endianlittle->SetCheck(BST_CHECKED);
+		endiandef->SetCheck(BST_UNCHECKED);
+		endianbig->SetCheck(BST_UNCHECKED);
 	}
 }

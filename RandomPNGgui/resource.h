@@ -25,6 +25,13 @@
 #define ID_TEXTGEN                      1017
 #define IDC_EDIT1                       1018
 #define ID_TEXT                         1018
+#define ID_WORDFIRST                    1019
+#define ID_WORDLAST                     1020
+#define ID_ENDIANDEF                    1021
+#define ID_ENDIANBIG                    1022
+#define ID_ENDIANLITTLE                 1023
+#define ID_TRANSPARENCY2                1025
+#define ID_AUTOOPEN                     1025
 
 // Next default values for new objects
 // 
